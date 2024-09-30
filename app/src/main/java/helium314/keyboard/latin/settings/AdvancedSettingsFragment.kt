@@ -87,7 +87,7 @@ class AdvancedSettingsFragment : SubScreenFragment() {
     private val libfile by lazy { File(requireContext().filesDir.absolutePath + File.separator + JniUtils.JNI_LIB_IMPORT_FILE_NAME) }
     private val backupFilePatterns by lazy { listOf(
         "blacklists/.*\\.txt".toRegex(),
-        "layouts/.*.(txt|json)".toRegex(),
+        "layouts/$CUSTOM_LAYOUT_PREFIX+\\..{0,4}".toRegex(), // can't expect a period at the end, as this would break restoring older backups
         "dicts/.*/.*user\\.dict".toRegex(),
         "UserHistoryDictionary.*/UserHistoryDictionary.*\\.(body|header)".toRegex(),
         "custom_background_image.*".toRegex(),
@@ -149,6 +149,11 @@ class AdvancedSettingsFragment : SubScreenFragment() {
             customCurrencyDialog()
             true
         }
+
+        findPreference<Preference>("switch_after")?.setOnPreferenceClickListener {
+            switchToMainDialog()
+            true
+        }
     }
 
     override fun onStart() {
@@ -185,7 +190,7 @@ class AdvancedSettingsFragment : SubScreenFragment() {
                     ?.let { requireContext().assets.open("layouts" + File.separator + it).reader().readText() }
             }
         val displayName = layoutName.getStringResourceOrName("layout_", requireContext())
-        editCustomLayout(customLayoutName ?: "$CUSTOM_LAYOUT_PREFIX$layoutName.txt", requireContext(), originalLayout, displayName)
+        editCustomLayout(customLayoutName ?: "$CUSTOM_LAYOUT_PREFIX$layoutName.", requireContext(), originalLayout, displayName)
     }
 
     private fun showCustomizeFunctionalKeyLayoutsDialog() {
@@ -211,7 +216,7 @@ class AdvancedSettingsFragment : SubScreenFragment() {
                 requireContext().assets.open("layouts" + File.separator + defaultLayoutName).reader().readText()
             }
         val displayName = layoutName.substringAfter(CUSTOM_LAYOUT_PREFIX).getStringResourceOrName("layout_", requireContext())
-        editCustomLayout(customLayoutName ?: "$layoutName.json", requireContext(), originalLayout, displayName)
+        editCustomLayout(customLayoutName ?: "$layoutName.", requireContext(), originalLayout, displayName)
     }
 
     @SuppressLint("ApplySharedPref")
@@ -485,6 +490,31 @@ class AdvancedSettingsFragment : SubScreenFragment() {
         d.show()
     }
 
+    private fun switchToMainDialog() {
+        val checked = booleanArrayOf(
+            sharedPreferences.getBoolean(Settings.PREF_ABC_AFTER_SYMBOL_SPACE, true),
+            sharedPreferences.getBoolean(Settings.PREF_ABC_AFTER_EMOJI, false),
+            sharedPreferences.getBoolean(Settings.PREF_ABC_AFTER_CLIP, false),
+        )
+        val titles = arrayOf(
+            requireContext().getString(R.string.after_symbol_and_space),
+            requireContext().getString(R.string.after_emoji),
+            requireContext().getString(R.string.after_clip),
+        )
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.switch_keyboard_after)
+            .setMultiChoiceItems(titles, checked) { _, i, b -> checked[i] = b }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                sharedPreferences.edit {
+                    putBoolean(Settings.PREF_ABC_AFTER_SYMBOL_SPACE, checked[0])
+                    putBoolean(Settings.PREF_ABC_AFTER_EMOJI, checked[1])
+                    putBoolean(Settings.PREF_ABC_AFTER_CLIP, checked[2])
+                }
+            }
+            .show()
+    }
+
     private fun setupKeyLongpressTimeoutSettings() {
         val prefs = sharedPreferences
         findPreference<SeekBarDialogPreference>(Settings.PREF_KEY_LONGPRESS_TIMEOUT)?.setInterface(object : ValueProxy {
@@ -512,13 +542,13 @@ class AdvancedSettingsFragment : SubScreenFragment() {
 
     companion object {
         @Suppress("UNCHECKED_CAST") // it is checked... but whatever (except string set, because can't check for that))
-        private fun settingsToJsonStream(settings: Map<String, Any?>, out: OutputStream) {
-            val booleans = settings.filterValues { it is Boolean } as Map<String, Boolean>
-            val ints = settings.filterValues { it is Int } as Map<String, Int>
-            val longs = settings.filterValues { it is Long } as Map<String, Long>
-            val floats = settings.filterValues { it is Float } as Map<String, Float>
-            val strings = settings.filterValues { it is String } as Map<String, String>
-            val stringSets = settings.filterValues { it is Set<*> } as Map<String, Set<String>>
+        private fun settingsToJsonStream(settings: Map<String?, Any?>, out: OutputStream) {
+            val booleans = settings.filter { it.key is String && it.value is Boolean } as Map<String, Boolean>
+            val ints = settings.filter { it.key is String && it.value is Int } as Map<String, Int>
+            val longs = settings.filter { it.key is String && it.value is Long } as Map<String, Long>
+            val floats = settings.filter { it.key is String && it.value is Float } as Map<String, Float>
+            val strings = settings.filter { it.key is String && it.value is String } as Map<String, String>
+            val stringSets = settings.filter { it.key is String && it.value is Set<*> } as Map<String, Set<String>>
             // now write
             out.write("boolean settings\n".toByteArray())
             out.write(Json.encodeToString(booleans).toByteArray())

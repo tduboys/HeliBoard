@@ -77,6 +77,11 @@
         android:persistent="true" />
 
     <Preference
+        android:key="switch_after"
+        android:title="@string/switch_keyboard_after"
+        android:persistent="true" />
+
+    <Preference
         android:key="custom_currency_key"
         android:title="@string/customize_currencies"
         android:persistent="true" />
@@ -86,7 +91,7 @@
         android:title="@string/show_popup_keys_title"
         android:entries="@array/show_popup_keys_entries"
         android:entryValues="@array/show_popup_keys_values"
-        android:defaultValue="normal"
+        android:defaultValue="main"
         android:summary="%s"
         android:persistent="true"
         latin:singleLineTitle="false" />

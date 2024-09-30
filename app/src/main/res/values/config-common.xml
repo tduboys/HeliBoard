@@ -48,9 +48,10 @@
 
     <dimen name="config_language_on_spacebar_horizontal_margin">3dp</dimen>
 
-    <integer name="config_gesture_floating_preview_text_linger_timeout">200</integer>
     <integer name="config_gesture_trail_fadeout_start_delay">100</integer>
-    <integer name="config_gesture_trail_fadeout_duration">800</integer>
+    <integer name="config_gesture_trail_fadeout_duration_default">800</integer>
+    <integer name="config_gesture_trail_fadeout_duration_max">1900</integer>
+    <integer name="config_gesture_trail_fadeout_duration_step">50</integer>
     <integer name="config_gesture_trail_update_interval">20</integer>
     <!-- Static threshold for gesture after fast typing (msec) -->
     <integer name="config_gesture_static_time_threshold_after_fast_typing">500</integer>
@@ -95,6 +96,9 @@
     <dimen name="config_more_suggestions_bottom_gap">6dp</dimen>
     <dimen name="config_more_suggestions_modal_tolerance">32.0dp</dimen>
     <fraction name="config_more_suggestions_info_ratio">18%</fraction>
+
+    <!-- Common clipboard suggestion configuration. -->
+    <bool name="config_default_suggest_clipboard_content">true</bool>
 
     <!-- Common gesture trail parameters -->
     <!-- Minimum distance between gesture trail sampling points. -->

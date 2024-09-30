@@ -355,6 +355,8 @@ public class Key implements Comparable<Key> {
     @NonNull
     public static Key removeRedundantPopupKeys(@NonNull final Key key,
             @NonNull final PopupKeySpec.LettersOnBaseLayout lettersOnBaseLayout) {
+        if ((key.mPopupKeysColumnAndFlags & POPUP_KEYS_FLAGS_FIXED_COLUMN) != 0)
+            return key; // don't remove anything for fixed column popup keys
         final PopupKeySpec[] popupKeys = key.getPopupKeys();
         final PopupKeySpec[] filteredPopupKeys = PopupKeySpec.removeRedundantPopupKeys(
                 popupKeys, lettersOnBaseLayout);
@@ -515,8 +517,11 @@ public class Key implements Comparable<Key> {
     }
 
     public final boolean isModifier() {
-        return mCode == KeyCode.SHIFT || mCode == KeyCode.SYMBOL_ALPHA || mCode == KeyCode.ALPHA || mCode == KeyCode.SYMBOL
-                || mCode == KeyCode.CTRL || mCode == KeyCode.ALT || mCode == KeyCode.FN || mCode == KeyCode.META;
+        return switch (mCode) {
+            case KeyCode.SHIFT, KeyCode.SYMBOL_ALPHA, KeyCode.ALPHA, KeyCode.SYMBOL, KeyCode.NUMPAD, KeyCode.CTRL,
+                    KeyCode.ALT, KeyCode.FN, KeyCode.META -> true;
+            default -> false;
+        };
     }
 
     public final boolean isRepeatable() {
@@ -933,11 +938,12 @@ public class Key implements Comparable<Key> {
         final String iconName = getIconName();
         if (iconName == null) return false;
         // todo: other way of identifying the color?
-        //  if yes, NAME_CLIPBOARD_ACTION_KEY and NAME_CLIPBOARD_NORMAL_KEY could be merged
+        //  this should be done differently, as users can set any icon now
+        //  how is the background drawable selected? can we use the same way?
         return iconName.equals(KeyboardIconsSet.NAME_NEXT_KEY)
                 || iconName.equals(KeyboardIconsSet.NAME_PREVIOUS_KEY)
-                || iconName.equals(KeyboardIconsSet.NAME_CLIPBOARD_ACTION_KEY)
-                || iconName.equals(KeyboardIconsSet.NAME_EMOJI_ACTION_KEY);
+                || iconName.equals("clipboard_action_key")
+                || iconName.equals("emoji_action_key");
     }
 
     public boolean hasFunctionalBackground() {
